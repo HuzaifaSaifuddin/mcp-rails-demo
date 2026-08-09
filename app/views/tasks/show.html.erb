@@ -1,0 +1,14 @@
+<% content_for :title, @task.title %>
+
+<h1><%= @task.title %></h1>
+<p>Project: <%= link_to @task.project.name, @task.project %></p>
+<p>Status: <%= @task.status %></p>
+<p>Due: <%= @task.due_date || "no due date" %></p>
+<p><%= @task.description %></p>
+
+<p>
+  <%= link_to "Edit", edit_task_path(@task) %>
+  <%= button_to "Delete", @task, method: :delete, form: { data: { turbo_confirm: "Delete this task?" } } %>
+</p>
+
+<p><%= link_to "Back to project", @task.project %></p>

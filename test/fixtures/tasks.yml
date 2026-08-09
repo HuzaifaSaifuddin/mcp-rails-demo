@@ -1,0 +1,24 @@
+wireframes:
+  project: website_redesign
+  title: Create wireframes
+  description: Low-fidelity wireframes for the homepage
+  status: done
+  due_date: <%= 10.days.ago.to_date %>
+
+homepage_copy:
+  project: website_redesign
+  title: Write homepage copy
+  status: in_progress
+  due_date: <%= 5.days.from_now.to_date %>
+
+overdue_checkout_fix:
+  project: website_redesign
+  title: Fix broken checkout
+  status: pending
+  due_date: <%= 5.days.ago.to_date %>
+
+ci_pipeline:
+  project: mobile_app
+  title: Set up CI pipeline
+  status: pending
+  due_date: <%= 10.days.from_now.to_date %>

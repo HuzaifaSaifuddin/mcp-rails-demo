@@ -1,0 +1,34 @@
+<%= form_with model: task, url: (task.persisted? ? task_path(task) : project_tasks_path(task.project)) do |f| %>
+  <% if task.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(task.errors.count, "error") %> prohibited this task from being saved:</h2>
+      <ul>
+        <% task.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :title %>
+    <%= f.text_field :title %>
+  </div>
+
+  <div>
+    <%= f.label :description %>
+    <%= f.text_area :description %>
+  </div>
+
+  <div>
+    <%= f.label :status %>
+    <%= f.select :status, Task.statuses.keys %>
+  </div>
+
+  <div>
+    <%= f.label :due_date %>
+    <%= f.date_field :due_date %>
+  </div>
+
+  <%= f.submit %>
+<% end %>

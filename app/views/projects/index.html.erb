@@ -1,0 +1,20 @@
+<% content_for :title, "Projects" %>
+
+<h1>Projects</h1>
+
+<%= form_with url: projects_path, method: :get do |f| %>
+  <%= f.text_field :q, value: params[:q], placeholder: "Search projects" %>
+  <%= f.submit "Search" %>
+<% end %>
+
+<p><%= link_to "New project", new_project_path %></p>
+
+<ul>
+  <% @projects.each do |project| %>
+    <li>
+      <%= link_to project.name, project %>
+      &mdash; <%= project.status %>
+      (<%= pluralize(project.tasks.count, "task") %>)
+    </li>
+  <% end %>
+</ul>

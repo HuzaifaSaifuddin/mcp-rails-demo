@@ -1,0 +1,7 @@
+<% content_for :title, "Edit #{@project.name}" %>
+
+<h1>Edit project</h1>
+
+<%= render "form", project: @project %>
+
+<p><%= link_to "Back to project", @project %></p>
