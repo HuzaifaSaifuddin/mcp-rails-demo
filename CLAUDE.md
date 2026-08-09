@@ -81,9 +81,9 @@ Maintain:
 
 ```text
 ### Progress
-- [ ] Rails CRUD
-- [ ] Authentication
-- [ ] Authorization
+- [x] Rails CRUD
+- [x] Authentication
+- [x] Authorization
 - [ ] MCP library evaluation
 - [ ] MCP Rack/Streamable HTTP mount
 - [ ] MCP tool
@@ -95,6 +95,32 @@ Maintain:
 ```
 
 Update this after each completed stage.
+
+---
+
+## MCP Mentor (persistent)
+
+**Project architecture:** `Project has_many :tasks`, both owned by `User`. Controllers are thin; query/business logic lives on models as scopes (`Project.active`, `Project.search`, `Task.overdue`, `Task.open`) so MCP tools can call the same methods later instead of duplicating logic.
+
+**Ruby/Rails versions:** Ruby 3.3.11, Rails 8.1.3.1, PostgreSQL.
+
+**MCP gem/version:** `mcp ~> 1.1` (in Gemfile, not yet integrated — Stage 3).
+
+**Authentication approach:** Rails 8's native `bin/rails generate authentication` generator (not Devise) — `User` model with `has_secure_password`, `Session` model, signed permanent cookie (`session_id`), `Current` (`ActiveSupport::CurrentAttributes`) holding the request-scoped session/user, `Authentication` concern included in `ApplicationController` (`before_action :require_authentication` by default; opt out per-controller with `allow_unauthenticated_access`). Added a `RegistrationsController`/`resource :registration` by hand since the generator deliberately omits sign-up.
+
+**Authorization approach:** ownership-based, no Pundit/CanCan. `Project belongs_to :user`; `User has_many :tasks, through: :projects`. Every controller lookup goes through `Current.user.projects` / `Current.user.tasks` instead of `Project`/`Task` directly, so another user's record 404s (via `ActiveRecord::RecordNotFound`) rather than needing a separate authorization check or leaking existence via 403. This scoping idiom is intended to be reused as-is by MCP tool/resource handlers once the authenticated principal comes from an API token instead of a cookie (Stage 7).
+
+**MCP transport:** not yet decided — Stage 3/4. Per CLAUDE.md: Streamable HTTP, not stdio.
+
+**MCP mount path:** not yet decided — Stage 4 (planned: `/mcp`).
+
+**Important architectural decisions:**
+- Rails authentication (browser session cookie) is explicitly separate from MCP HTTP authentication (Stage 7) — a browser session cookie does not authenticate a remote MCP client; MCP will need its own credential (e.g. bearer token) mapped back to a `User`.
+- Global uniqueness on `Project#name` was deliberately *not* added at the DB level in Stage 1, anticipating per-user ownership in Stage 2 (avoided migration churn).
+
+**Mistakes/corrections:** none yet.
+
+**Current build state:** Stages 1 and 2 complete and committed. Huzaifa opted to have Claude implement and commit Stages 1 & 2 directly (rather than the default "I implement first" workflow) given senior Rails familiarity; teaching/quiz workflow resumes at Stage 3.
 
 ---
 
