@@ -2,9 +2,15 @@ require "test_helper"
 
 class ProjectTest < ActiveSupport::TestCase
   test "invalid without a name" do
-    project = Project.new(description: "x")
+    project = Project.new(user: users(:one), description: "x")
     assert_not project.valid?
     assert_includes project.errors[:name], "can't be blank"
+  end
+
+  test "invalid without a user" do
+    project = Project.new(name: "Orphan project")
+    assert_not project.valid?
+    assert_includes project.errors[:user], "must exist"
   end
 
   test "defaults to active status" do

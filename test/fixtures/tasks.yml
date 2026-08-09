@@ -22,3 +22,9 @@ ci_pipeline:
   title: Set up CI pipeline
   status: pending
   due_date: <%= 10.days.from_now.to_date %>
+
+legacy_cleanup:
+  project: legacy_migration
+  title: Archive old records
+  status: pending
+  due_date: <%= 10.days.from_now.to_date %>

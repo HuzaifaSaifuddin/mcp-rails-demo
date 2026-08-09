@@ -1,14 +1,17 @@
 website_redesign:
+  user: one
   name: Website Redesign
   description: Refresh the marketing site
   status: active
 
 mobile_app:
+  user: one
   name: Mobile App
   description: iOS/Android client
   status: active
 
 legacy_migration:
+  user: two
   name: Legacy Migration
   description: Sunsetting the old system
   status: archived

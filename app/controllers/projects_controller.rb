@@ -2,18 +2,18 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: %i[show edit update destroy]
 
   def index
-    @projects = Project.search(params[:q]).order(created_at: :desc)
+    @projects = Current.user.projects.search(params[:q]).order(created_at: :desc)
   end
 
   def show
   end
 
   def new
-    @project = Project.new
+    @project = Current.user.projects.new
   end
 
   def create
-    @project = Project.new(project_params)
+    @project = Current.user.projects.new(project_params)
 
     if @project.save
       redirect_to @project, notice: "Project created."
@@ -41,7 +41,7 @@ class ProjectsController < ApplicationController
   private
 
   def set_project
-    @project = Project.find(params[:id])
+    @project = Current.user.projects.find(params[:id])
   end
 
   def project_params

@@ -2,19 +2,34 @@
 # development, test). The code here should be idempotent so that it can be executed at any point in every environment.
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
-website = Project.find_or_create_by!(name: "Website Redesign") do |p|
+demo_user = User.find_or_create_by!(email_address: "demo@example.com") do |u|
+  u.password = "password"
+  u.password_confirmation = "password"
+end
+
+other_user = User.find_or_create_by!(email_address: "other@example.com") do |u|
+  u.password = "password"
+  u.password_confirmation = "password"
+end
+
+website = demo_user.projects.find_or_create_by!(name: "Website Redesign") do |p|
   p.description = "Refresh the marketing site ahead of the Q4 launch"
   p.status = :active
 end
 
-mobile = Project.find_or_create_by!(name: "Mobile App") do |p|
+mobile = demo_user.projects.find_or_create_by!(name: "Mobile App") do |p|
   p.description = "iOS/Android client for existing customers"
   p.status = :active
 end
 
-Project.find_or_create_by!(name: "Legacy Migration") do |p|
+demo_user.projects.find_or_create_by!(name: "Legacy Migration") do |p|
   p.description = "Sunsetting the old system"
   p.status = :archived
+end
+
+other_user.projects.find_or_create_by!(name: "Marketing Site") do |p|
+  p.description = "A project owned by a different user, to demonstrate authorization"
+  p.status = :active
 end
 
 website.tasks.find_or_create_by!(title: "Create wireframes") do |t|
