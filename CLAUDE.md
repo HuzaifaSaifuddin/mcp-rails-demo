@@ -90,7 +90,7 @@ Maintain:
 - [x] MCP resource
 - [x] MCP authentication
 - [x] MCP tests
-- [ ] End-to-end MCP client verification
+- [x] End-to-end MCP client verification
 - [ ] Final architecture review
 ```
 
@@ -142,7 +142,18 @@ Update this after each completed stage.
 - Token issuance is console-driven (`ApiToken.generate!`) for now — no rake task or UI; explicitly deferred, not forgotten.
 - Tests: `test/models/api_token_test.rb` (9), `test/models/current_test.rb` (4), `test/integration/mcp_authentication_test.rb` (7, including the live session-hijack scenario). Full suite at 79 runs.
 
-Next: Stage 8 (end-to-end MCP client verification), Huzaifa implements first.
+Stage 8 complete — `script/mcp_client_demo.rb` is a standalone Ruby MCP client (stdlib `Net::HTTP` only, no Rails, no `mcp` gem — a real external client wouldn't have either) that drives `/mcp` over real Streamable HTTP and asserts the full CLAUDE.md Stage 8 checklist against real seeded data, not mocks:
+1. `initialize` negotiates a real session.
+2. `tools/list` / `resources/templates/list` discover `search_projects` and `project://{id}`.
+3. `tools/call search_projects` returns real projects owned by the token's user.
+4. `resources/read project://<id>` for an id `search_projects` just returned round-trips the same record.
+5. No `Authorization` header → `401`.
+6. Reading another real user's real project id → `MCP::Server::ResourceNotFoundError`, not leaked, not a 403.
+7. `tools/call search_projects` with the required `message` argument omitted → the gem's built-in schema validation fires, `isError: true`.
+
+Handles both response shapes the transport can return (`application/json` and `text/event-stream` SSE framing) — this was necessary, not defensive over-engineering: `initialize` and follow-up calls didn't consistently use the same one during testing. Run against a real `bin/rails server` process with a console-generated `ApiToken`, all 7 checks passed on the real server/real Postgres data. All 79 Rails tests and rubocop stayed clean throughout.
+
+Next: Final Architecture Review (see FINAL REVIEW section at the end of this file).
 
 **Mistakes/corrections (Stage 6):**
 - `contents` was first defined as an *instance* method (`def contents(...)`) instead of the class-level method the gem's dispatcher actually calls (`def self.contents(...)`) — same class-vs-instance trap as `Tool.call` in Stage 5, and just as invisible from reading the code; only surfaced by actually invoking `ProjectResource.contents(...)` and hitting the parent's `NotImplementedError`.
