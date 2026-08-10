@@ -66,3 +66,9 @@ group :test do
 end
 
 gem "mcp", "~> 1.1"
+
+# Only required by MCP::Client::HTTP (script/mcp_gem_client_demo.rb) - the
+# server side used by the rest of the app (MCP::Server, StreamableHTTPTransport)
+# doesn't need either.
+gem "faraday"
+gem "event_stream_parser"
