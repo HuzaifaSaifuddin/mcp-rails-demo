@@ -19,8 +19,11 @@ Rails.application.routes.draw do
   )
 
   mcp_transport = MCP::Server::Transports::StreamableHTTPTransport.new(
-    mcp_server
+    mcp_server,
+    session_request_validator: ->(request, session_id) {
+      McpSessionOwnership.owned_by?(session_id, Current.api_token&.id)
+    }
   )
 
-  mount mcp_transport => "/mcp"
+  mount McpAuthentication.new(mcp_transport) => "/mcp"
 end
