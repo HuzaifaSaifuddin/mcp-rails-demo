@@ -91,7 +91,7 @@ Maintain:
 - [x] MCP authentication
 - [x] MCP tests
 - [x] End-to-end MCP client verification
-- [ ] Final architecture review
+- [x] Final architecture review
 ```
 
 Update this after each completed stage.
@@ -133,7 +133,9 @@ Update this after each completed stage.
 - Global uniqueness on `Project#name` was deliberately *not* added at the DB level in Stage 1, anticipating per-user ownership in Stage 2 (avoided migration churn).
 - Stage 3: chose the mount-based integration over the per-request controller-based integration (see "MCP mounting style" above) — static tool set, want SSE, and per-request identity will flow through `Current` (Rack-middleware-set) rather than through the gem's `server_context`.
 
-**Current build state:** Stages 1-6 complete and committed (see commit history — one commit per stage, plus trailing "Record ... in CLAUDE.md persistent memory" commits, matching the Stage 1/2 precedent). Stage 7 complete and committed (`68603ed`):
+**Current build state:** All 8 stages plus the Final Architecture Review complete and committed (see commit history — one commit per stage, plus trailing "Record ... in CLAUDE.md persistent memory" commits). Detail below, most recent stages last.
+
+Stage 7 complete and committed (`68603ed`):
 - `ApiToken` (`belongs_to :user`, `revoked_at`) — `ApiToken.generate!(user:, name: nil)` creates a `SecureRandom.hex(32)` raw token, persists only its SHA-256 digest, returns the plaintext exactly once via `plaintext_token` (never persisted, never retrievable again). `ApiToken.authenticate(raw)` looks up by digest, excludes revoked tokens, returns `nil` for blank/garbage input.
 - `Current` gained an `api_token` attribute alongside `session`; `#user` now checks `session&.user || api_token&.user` instead of delegating solely to `session` — a bearer-token request has no `Session` record (that model specifically means "browser login": `ip_address`, `user_agent`, the cookie), so a second identity source was needed without minting fake `Session` rows for API calls.
 - `McpAuthentication` (`app/middleware/mcp_authentication.rb`) wraps only the `/mcp` mount (`mount McpAuthentication.new(mcp_transport) => "/mcp"` in `routes.rb`, not app-wide middleware) — extracts `Authorization: Bearer`, authenticates via `ApiToken`, sets `Current.api_token`, touches `last_used_at`. Missing header, wrong scheme, invalid token, and revoked token all return an identical `401` — deliberately indistinguishable, same don't-leak-information principle as ownership-scoping elsewhere. Never logs the raw token.
@@ -155,7 +157,17 @@ Handles both response shapes the transport can return (`application/json` and `t
 
 **Also verified with a real client, not just the script**: registered the server with Claude Code (`claude mcp add --transport http mcp-rails-demo http://localhost:3000/mcp --header "Authorization: Bearer <token>"`, default `--scope local`) and drove it from a fresh chat with no scripted instructions. Given "Search my projects for Website" in plain English, it autonomously called `search_projects` and returned the real row (id 1, "Website Redesign", active). Separately, attaching `project://1` via the `@mcp-rails-demo:project://` picker returned the exact resource JSON, description included. Confirms the tool-vs-resource distinction from the Stage 6 quiz held up in practice: a real model called the tool on its own but treated the resource as something to explicitly attach, not invoke. This was the *preferred* Stage 8 verification method per the original spec (Claude Code/Desktop); the standalone script is the reproducible fallback alongside it, not a replacement for it.
 
-Next: Final Architecture Review (see FINAL REVIEW section at the end of this file).
+**Bonus, beyond the original 8 stages**: after Stage 8, explored the *other* half of the `mcp` gem — `MCP::Client`/`MCP::Client::HTTP` (`script/mcp_gem_client_demo.rb`, `Gemfile` gains `faraday`/`event_stream_parser`), since the original plan only ever needed `MCP::Server`. Confirmed live: `MCP::Client::ServerError` gets *raised* for protocol-level failures (cross-user resource read), while a tool-level failure (missing argument) returns normally with `isError: true` — the same distinction built server-side in Stage 5/7, mirrored automatically by the gem on the client. Also worked through, via extended Q&A rather than code, where an `MCP::Client` actually belongs in a real product (embedded in your *own* app's backend, e.g. behind a natural-language search feature — paired with an LLM only when there's ambiguity to resolve, not required by MCP itself) and confirmed the exact mechanics of how an LLM's tool-call decision (JSON in an API response) becomes a client-side method call (application code reading that JSON and calling `client.call_tool` itself — the LLM never "reaches" anything).
+
+**Final Architecture Review complete** (see FINAL REVIEW section at the end of this file for the review criteria). Summary of the review's findings:
+- Architecture held its core principle end to end: MCP is a thin adapter (`SearchProjectsTool`/`ProjectResource` call the same `Project`/`Task` scopes controllers do), never a second business-logic layer.
+- The single best decision: one authorization idiom (`Current.user.projects`/`.tasks`) reused unchanged across controllers, tools, and resources — made possible by the Stage 7 `Current` refactor (`session&.user || api_token&.user`) rather than by duplicating logic per entry point.
+- The single biggest structural limitation: `StreamableHTTPTransport`'s in-memory session state (and `McpSessionOwnership` mirroring it) requires single-process Puma (`workers 0`) — blocks horizontal scaling until moved to shared storage (Redis, or the `solid_cache`/`solid_queue` already in the Gemfile).
+- Recurring lesson across Stages 5-6: this gem's class-level DSL fails silently/misleadingly (a generic `NotImplementedError`, not a syntax error) on a subtly wrong subclass convention (instance vs. class method) — caught only by *running* new tool/resource code, never by reading it.
+- Production punch list (priority order): move session state out of process memory; add token scopes/expiry/rotation (currently one token = full access, forever, console-issued only); rate limit `/mcp`; wire up the unused `MCP.configure` exception/instrumentation hooks; evict `McpSessionOwnership` entries on real session expiry instead of relying on the shared `max_sessions` cap; real OAuth2 support if cross-vendor interop (e.g. Gemini Enterprise) is ever a real requirement, sized as its own project.
+- Closing question posed (mount-based `MCP::Server` + sticky sessions/shared state vs. reverting to the Stage 3-rejected per-request controller pattern to remove the single-process constraint entirely) — left open as the natural next architectural decision if this app ever needed to scale for real.
+
+Project's original 8-stage scope is complete.
 
 **Mistakes/corrections (Stage 6):**
 - `contents` was first defined as an *instance* method (`def contents(...)`) instead of the class-level method the gem's dispatcher actually calls (`def self.contents(...)`) — same class-vs-instance trap as `Tool.call` in Stage 5, and just as invisible from reading the code; only surfaced by actually invoking `ProjectResource.contents(...)` and hitting the parent's `NotImplementedError`.
