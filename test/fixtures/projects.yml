@@ -15,3 +15,15 @@ legacy_migration:
   name: Legacy Migration
   description: Sunsetting the old system
   status: archived
+
+other_user_website:
+  user: two
+  name: Website Analytics
+  description: A different user's project that also matches "Website"
+  status: active
+
+archived_website:
+  user: one
+  name: Website Archive
+  description: user one's own project, but archived
+  status: archived
