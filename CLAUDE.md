@@ -153,6 +153,8 @@ Stage 8 complete — `script/mcp_client_demo.rb` is a standalone Ruby MCP client
 
 Handles both response shapes the transport can return (`application/json` and `text/event-stream` SSE framing) — this was necessary, not defensive over-engineering: `initialize` and follow-up calls didn't consistently use the same one during testing. Run against a real `bin/rails server` process with a console-generated `ApiToken`, all 7 checks passed on the real server/real Postgres data. All 79 Rails tests and rubocop stayed clean throughout.
 
+**Also verified with a real client, not just the script**: registered the server with Claude Code (`claude mcp add --transport http mcp-rails-demo http://localhost:3000/mcp --header "Authorization: Bearer <token>"`, default `--scope local`) and drove it from a fresh chat with no scripted instructions. Given "Search my projects for Website" in plain English, it autonomously called `search_projects` and returned the real row (id 1, "Website Redesign", active). Separately, attaching `project://1` via the `@mcp-rails-demo:project://` picker returned the exact resource JSON, description included. Confirms the tool-vs-resource distinction from the Stage 6 quiz held up in practice: a real model called the tool on its own but treated the resource as something to explicitly attach, not invoke. This was the *preferred* Stage 8 verification method per the original spec (Claude Code/Desktop); the standalone script is the reproducible fallback alongside it, not a replacement for it.
+
 Next: Final Architecture Review (see FINAL REVIEW section at the end of this file).
 
 **Mistakes/corrections (Stage 6):**
