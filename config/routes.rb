@@ -14,7 +14,8 @@ Rails.application.routes.draw do
   mcp_server = MCP::Server.new(
     name: "mcp-rails-demo",
     version: "1.0.0",
-    tools: [ SearchProjectsTool ]
+    tools: [ SearchProjectsTool ],
+    resource_templates: [ ProjectResource ]
   )
 
   mcp_transport = MCP::Server::Transports::StreamableHTTPTransport.new(
